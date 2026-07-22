@@ -30,6 +30,11 @@ class FitnessApiTests(APITestCase):
         self.assertEqual(response.status_code, 201)
         self.assertEqual(response.data["exercise_name"], "ランニング")
 
+    def test_health_check(self):
+        response = self.client.get("/api/health/")
+        self.assertEqual(response.status_code, 200)
+        self.assertJSONEqual(response.content, {"status": "ok"})
+
     def test_workout_summary(self):
         self.client.post(
             "/api/workouts/",

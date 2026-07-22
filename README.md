@@ -1,27 +1,40 @@
-# Team-6-Django-backend-feature-auth-goal-api
+# Team 6 Full-stack Release
 
-このディレクトリは Django API サービスを単独で管理するリポジトリです。React フロントエンドは別レポジトリで独立しており、`scripts/sync-react-to-django.sh` でビルド成果物を取り込んで `/app` で公開します。
+React UI and Django REST API are deployed as one HTTPS service. The production image builds the UI, serves its assets through Django/WhiteNoise, and exposes the API under `/api/` on the same origin.
 
-## セットアップ
-1. `cd Team-6-Django-backend-feature-auth-goal-api`
-2. `python3 -m venv venv`
-3. `source venv/bin/activate`
-4. `pip install --break-system-packages -r requirements.txt`
-5. `python manage.py migrate`
+## Sources preserved in this release
 
-## 開発サーバー
-- `python manage.py runserver 0.0.0.0:8000`
-- `http://127.0.0.1:8000/api/` で DRF エンドポイント、`/app` で React SPA を提供します。
+- UI: `Tech-Jam-KDG-2026-Winter/Team-6-React-frontend` branch `develop` (`facd5d6`).
+- API: `Tech-Jam-KDG-2026-Winter/Team-6-Django-backend` branch `main` (`ab1bd43`).
 
-## React ビルド資産の取り込み
-1. `scripts/sync-react-to-django.sh` を実行すると、React の `dist/` を Django のテンプレート・静的 assets にコピーし、`collectstatic` まで自動で回ります。
-2. React 側のビルドは `Team-6-React-frontend/Team-6-react-frontend` で `npm run build` を手動またはスクリプトから実行してください。
+The historical nested `node_modules`, built assets, and unrelated backend branches were intentionally excluded.
 
-## テスト
-- `python manage.py test`
+## Local development
 
-## 重要なパス
-- `backend/static/app/assets/`：WhiteNoise で配信する React アセット
-- `backend/templates/app/index.html`：React ルートを描画するテンプレート
+Create `backend/.env` from the root `.env.example`, then run the backend and UI in separate terminals:
 
-このリポジトリ単体で API を開発しつつ、`scripts/sync-react-to-django.sh` を使って統合された `/app` を確認してください。
+```sh
+cd backend
+cp ../.env.example .env
+python manage.py migrate
+python manage.py runserver
+```
+
+```sh
+cd frontend
+npm ci
+npm run dev
+```
+
+For production-like validation, build and run the Docker image with the required environment variables. The health endpoint is `/api/health/`.
+
+## Deployment
+
+`render.yaml` defines a single Docker web service plus managed Postgres. Connect this repository in Render, create the Blueprint, and keep the generated `SECRET_KEY` private. The service uses `/api/health/` for health checks, applies migrations on startup, and stores database data in Postgres.
+
+Before release, run:
+
+```sh
+cd frontend && npm ci && npm run lint && npm run build
+cd ../backend && DEBUG=true SECRET_KEY=local-only-secret python manage.py test
+```

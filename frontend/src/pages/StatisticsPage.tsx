@@ -21,10 +21,10 @@ const reasons = [
 ]
 
 const navItems: BottomNavItem[] = [
-  { key: 'home', label: 'ホーム' },
-  { key: 'reasonInput', label: '記録' },
-  { key: 'takecare', label: 'お世話' },
-  { key: 'reflection', label: '振り返り' },
+  { key: 'home', label: 'ホーム', icon: '⌂' },
+  { key: 'reasonInput', label: '記録', icon: '✎' },
+  { key: 'takecare', label: 'お世話', icon: '♡' },
+  { key: 'reflection', label: '振り返り', icon: '◫' },
 ]
 
 export function StatisticsPage() {

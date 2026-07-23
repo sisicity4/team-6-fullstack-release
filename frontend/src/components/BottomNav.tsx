@@ -15,8 +15,12 @@ export function BottomNav({ items, activeKey, onNavigate }: Props) {
           type="button"
           className={`bottom-nav__item ${item.key === activeKey ? 'bottom-nav__item--active' : ''}`.trim()}
           onClick={() => onNavigate(item.key)}
+          aria-current={item.key === activeKey ? 'page' : undefined}
         >
-          {item.label}
+          <span className="bottom-nav__icon" aria-hidden="true">
+            {item.icon}
+          </span>
+          <span>{item.label}</span>
         </button>
       ))}
     </nav>

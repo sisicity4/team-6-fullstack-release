@@ -18,6 +18,12 @@ from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+LOCAL_FRONTEND_DIST_DIR = BASE_DIR.parent / "frontend" / "dist"
+FRONTEND_BUILD_DIRS = [
+    directory
+    for directory in (BASE_DIR / "frontend_dist", LOCAL_FRONTEND_DIST_DIR)
+    if directory.exists()
+]
 load_dotenv(BASE_DIR / ".env")
 
 
@@ -69,7 +75,7 @@ ROOT_URLCONF = 'config.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'templates'],
+        'DIRS': [BASE_DIR / 'templates', *FRONTEND_BUILD_DIRS],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -147,7 +153,7 @@ REST_FRAMEWORK = {
 
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
-STATICFILES_DIRS = [BASE_DIR / 'frontend_dist'] if (BASE_DIR / 'frontend_dist').exists() else []
+STATICFILES_DIRS = FRONTEND_BUILD_DIRS
 STORAGES = {
     'staticfiles': {
         'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage',

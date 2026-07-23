@@ -35,6 +35,11 @@ class FitnessApiTests(APITestCase):
         self.assertEqual(response.status_code, 200)
         self.assertJSONEqual(response.content, {"status": "ok"})
 
+    def test_frontend_entrypoint_is_served_when_built(self):
+        response = self.client.get("/")
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, '<div id="root"></div>', html=False)
+
     def test_register_rejects_weak_password(self):
         response = self.client.post(
             "/api/register/",

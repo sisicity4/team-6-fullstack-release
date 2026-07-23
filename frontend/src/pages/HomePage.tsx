@@ -87,8 +87,12 @@ export function HomePage({
         </div>
       </Card>
 
-      <button className="link-button" type="button" onClick={onViewReflection}>
-        週次振り返りへ
+      <button className="home-reflection-cta" type="button" onClick={onViewReflection}>
+        <span>
+          <span className="home-reflection-cta__label">週次振り返り</span>
+          <span className="home-reflection-cta__detail">直近7日を確認する</span>
+        </span>
+        <span className="home-reflection-cta__arrow" aria-hidden="true">→</span>
       </button>
     </section>
   )

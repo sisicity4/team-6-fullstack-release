@@ -20,7 +20,7 @@
 | UI上の記録保存 | JWT認証済みユーザーのDjango DBへ保存 |
 | JWT認証、目標、振り返り、運動・身体データのREST API | 実装済み |
 | UIとAPIの接続 | 登録・ログイン、トークン更新、日次ログの保存・取得を実装済み |
-| 「運動」「ショップ」「お世話」の下部ナビ | プレースホルダー |
+| 下部ナビ（ホーム・記録・お世話・振り返り） | 実装済み |
 | Apple Health等の外部サービス連携 | 未実装（保存元を表すフィールドのみ） |
 
 > ログイン後の画面操作は、同一オリジンのDjango APIを呼び出します。JWTはログイン状態を維持するためブラウザに保存し、アクセストークンの期限切れ時はリフレッシュトークンで更新します。
@@ -81,6 +81,20 @@ npm run dev
 ```
 
 表示されたURL（通常は <http://localhost:5173> ）を開きます。
+
+### 4. DjangoからUIもまとめて確認する
+
+Docker／RenderではUIをビルドしてからDjangoが配信します。ローカルで `http://127.0.0.1:8000/` を直接開く場合も、先にUIをビルドしてください。
+
+```sh
+cd frontend
+npm run build
+cd ../backend
+python manage.py migrate
+python manage.py runserver
+```
+
+これで <http://127.0.0.1:8000/> からUI、`/api/` からAPIを同一オリジンで確認できます。`TemplateDoesNotExist: index.html` が出た場合は、このビルド手順が未実行です。
 
 ## APIの概要
 

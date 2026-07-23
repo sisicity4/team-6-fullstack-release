@@ -40,5 +40,6 @@ export type WeeklyReasonSummary = {
 export type BottomNavItem = {
   key: Screen
   label: string
+  icon: string
   note?: string
 }

@@ -17,6 +17,7 @@ import { Card } from './components/ui/Card'
 import { bottomNavItems, reasonOptions } from './data/appData'
 import { AuthPage } from './pages/AuthPage'
 import { CounterActionPage } from './pages/CounterActionPage'
+import { CarePage } from './pages/CarePage'
 import { HomePage } from './pages/HomePage'
 import { ReasonInputPage } from './pages/ReasonInputPage'
 import { ReflectionPage } from './pages/ReflectionPage'
@@ -103,7 +104,9 @@ export function App() {
     return reasonOptions.map((reason) => {
       const occurrences7 = recentSevenLogs.filter((log) => log.reasonId === reason.id).length
       const occurrences30 = recentThirtyLogs.filter((log) => log.reasonId === reason.id).length
-      const lastLog = [...dailyLogs].reverse().find((log) => log.reasonId === reason.id)
+      const lastLog = [...dailyLogs]
+        .sort((a, b) => b.date.localeCompare(a.date))
+        .find((log) => log.reasonId === reason.id)
       return {
         id: reason.id,
         label: reason.label,
@@ -154,6 +157,8 @@ export function App() {
     if (!reason) return null
     return { label: reason.label, duration: log.counterDurationSeconds ?? 0, note: log.note }
   }, [dailyLogs])
+
+  const recentSuccessCount = recentSevenLogs.filter((log) => log.succeeded).length
 
   const persistDailyLog = async (log: DailyLog) => {
     if (!session || isSavingLog) return
@@ -267,7 +272,7 @@ export function App() {
     )
   }
 
-  const navActiveKey: Screen = screen === 'reasonInput' || screen === 'counterAction' ? 'home' : screen
+  const navActiveKey: Screen = screen === 'counterAction' ? 'reasonInput' : screen
   const currentReasonOption = reasonOptions.find((reason) => reason.id === selectedReasonId)
 
   const renderScreen = () => {
@@ -322,7 +327,17 @@ export function App() {
         />
       )
     }
-    return <section className="screen placeholder-screen"><Card><p>COMING SOON: {screen}</p></Card></section>
+    if (screen === 'takecare') {
+      return (
+        <CarePage
+          petStatus={petStatus}
+          totalLogCount={dailyLogs.length}
+          recentSuccessCount={recentSuccessCount}
+          onStartRecord={() => setScreen('reasonInput')}
+        />
+      )
+    }
+    return null
   }
 
   return (
@@ -335,7 +350,17 @@ export function App() {
       {isSavingLog && <p className="sync-status">記録を保存しています…</p>}
       {error && <p className="sync-error" role="alert">{error}</p>}
       {renderScreen()}
-      <BottomNav items={bottomNavItems} activeKey={navActiveKey} onNavigate={setScreen} />
+      <BottomNav
+        items={bottomNavItems}
+        activeKey={navActiveKey}
+        onNavigate={(nextScreen) => {
+          if (nextScreen === 'reasonInput') {
+            setSelectedReasonId(null)
+            setReasonMemo('')
+          }
+          setScreen(nextScreen)
+        }}
+      />
     </main>
   )
 }

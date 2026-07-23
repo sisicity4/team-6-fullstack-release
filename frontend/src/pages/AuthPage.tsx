@@ -26,6 +26,9 @@ export function AuthPage({ isSubmitting, error, onSubmit }: Props) {
         <div className="auth-tabs" role="tablist" aria-label="認証方法">
           <button
             type="button"
+            role="tab"
+            aria-selected={mode === 'login'}
+            aria-controls="auth-form-panel"
             className={mode === 'login' ? 'auth-tab auth-tab--active' : 'auth-tab'}
             onClick={() => setMode('login')}
           >
@@ -33,13 +36,16 @@ export function AuthPage({ isSubmitting, error, onSubmit }: Props) {
           </button>
           <button
             type="button"
+            role="tab"
+            aria-selected={mode === 'register'}
+            aria-controls="auth-form-panel"
             className={mode === 'register' ? 'auth-tab auth-tab--active' : 'auth-tab'}
             onClick={() => setMode('register')}
           >
             新規登録
           </button>
         </div>
-        <form className="auth-form" onSubmit={submit}>
+        <form id="auth-form-panel" className="auth-form" role="tabpanel" onSubmit={submit}>
           <label>
             ユーザー名
             <input

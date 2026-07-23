@@ -277,6 +277,8 @@ export function App() {
           petStatus={petStatus}
           recentEnemyReason={recentEnemyReason}
           todayCounterStatus={todayCounterStatus}
+          hasTodayLog={Boolean(todaysLog)}
+          todaySucceeded={todaysLog?.succeeded ?? false}
           onTapYes={handleYesTap}
           onTapNo={handleNoTap}
           onViewReflection={() => setScreen('reflection')}

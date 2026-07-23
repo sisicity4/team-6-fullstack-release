@@ -3,8 +3,6 @@ export type Screen =
   | 'reasonInput'
   | 'counterAction'
   | 'reflection'
-  | 'exercise'
-  | 'shop'
   | 'takecare'
 
 export type DailyLog = {

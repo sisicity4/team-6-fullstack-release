@@ -52,6 +52,7 @@ describe('HomePage', () => {
     expect(screen.getByText('今日はどんな日だった？')).toBeInTheDocument()
     expect(screen.getByText('Yes（ポジティブ）')).toBeInTheDocument()
     expect(screen.getByText('No（ネガティブ）')).toBeInTheDocument()
+    expect(screen.getByRole('img', { name: '応援するペット' })).toBeInTheDocument()
   })
 
   it('invokes handler on CTA click', () => {
@@ -60,6 +61,24 @@ describe('HomePage', () => {
     fireEvent.click(screen.getByText('No（ネガティブ）'))
     expect(onStartReflection).toHaveBeenNthCalledWith(1, 'positive')
     expect(onStartReflection).toHaveBeenNthCalledWith(2, 'negative')
+  })
+
+  it('changes the pet expression for a positive or tired reflection', () => {
+    const { rerender } = render(
+      <HomePage
+        {...baseProps}
+        latestReflection={{ ...baseProps.latestReflection, success: true }}
+      />,
+    )
+    expect(screen.getByRole('img', { name: '喜んでいるペット' })).toBeInTheDocument()
+
+    rerender(
+      <HomePage
+        {...baseProps}
+        latestReflection={{ ...baseProps.latestReflection, emotion_tags: ['疲れた'] }}
+      />,
+    )
+    expect(screen.getByRole('img', { name: '眠そうなペット' })).toBeInTheDocument()
   })
 
   it('shows reflection form when enabled', () => {

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import petSpark from '../assets/pet_rock.png'
+import { petVariants } from '../assets/newpic/petVariants'
 import { Card } from '../components/ui/Card'
 import { emotionTagOptions } from '../data/appData'
 import type {
@@ -96,6 +96,29 @@ function ReasonPicker({ reasons, helper, selected, onSelect }: ReasonPickerProps
   )
 }
 
+const getPetPresentation = (
+  latestReflection: ReflectionEntry | null,
+  emotionalTone: string | undefined,
+  sparkleTrigger: number | undefined,
+) => {
+  if (sparkleTrigger || latestReflection?.success) {
+    return { image: petVariants.expression.happy, label: '喜んでいるペット' }
+  }
+
+  const feelsTired =
+    emotionalTone?.includes('疲') ||
+    latestReflection?.emotion_tags.some((tag) => tag.includes('疲'))
+  if (feelsTired) {
+    return { image: petVariants.expression.sleepy, label: '眠そうなペット' }
+  }
+
+  if (latestReflection) {
+    return { image: petVariants.expression.encouraging, label: '応援するペット' }
+  }
+
+  return { image: petVariants.default, label: 'ペット' }
+}
+
 export function HomePage({
   latestReflection,
   profile,
@@ -142,6 +165,11 @@ export function HomePage({
       success: false,
     })
   }
+  const pet = getPetPresentation(
+    latestReflection,
+    profile?.emotional_tone,
+    sparkleTrigger,
+  )
   return (
     <section className="screen home-screen">
       <div
@@ -150,7 +178,7 @@ export function HomePage({
       />
       <Card className="home-hero panel-card">
         <div className="home-hero__badge">
-          <img src={petSpark} alt="ペット" />
+          <img src={pet.image} alt={pet.label} />
         </div>
         <div className="home-hero__text">
           <p className="home-hero__eyebrow">振り返り</p>

@@ -6,7 +6,7 @@ from django.core.management import call_command
 from django.utils import timezone
 from rest_framework.test import APITestCase
 
-from .models import WorkoutSession
+from .models import Reflection, WorkoutSession
 
 
 class FitnessApiTests(APITestCase):
@@ -34,6 +34,54 @@ class FitnessApiTests(APITestCase):
         response = self.client.get("/api/health/")
         self.assertEqual(response.status_code, 200)
         self.assertJSONEqual(response.content, {"status": "ok"})
+
+    def test_register_rejects_weak_password(self):
+        response = self.client.post(
+            "/api/register/",
+            {"username": "new-user", "password": "short"},
+            format="json",
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("password", response.data)
+
+    def test_register_then_login_returns_jwt_pair(self):
+        self.client.force_authenticate(user=None)
+        registered = self.client.post(
+            "/api/register/",
+            {"username": "new-user", "password": "A-secure-password-2026!"},
+            format="json",
+        )
+        self.assertEqual(registered.status_code, 201)
+
+        logged_in = self.client.post(
+            "/api/login/",
+            {"username": "new-user", "password": "A-secure-password-2026!"},
+            format="json",
+        )
+        self.assertEqual(logged_in.status_code, 200)
+        self.assertIn("access", logged_in.data)
+        self.assertIn("refresh", logged_in.data)
+
+    def test_reflection_log_is_upserted_per_day(self):
+        payload = {
+            "log_date": "2026-07-22",
+            "action": "30秒のリズムストレッチ",
+            "success": False,
+            "reason_id": "time",
+            "counter_duration_seconds": 30,
+        }
+        created = self.client.post("/api/reflections/", payload, format="json")
+        self.assertEqual(created.status_code, 201)
+
+        payload["counter_duration_seconds"] = 0
+        updated = self.client.post("/api/reflections/", payload, format="json")
+        self.assertEqual(updated.status_code, 200)
+        self.assertEqual(Reflection.objects.filter(user=self.user).count(), 1)
+        self.assertEqual(updated.data["counter_duration_seconds"], 0)
+
+        listed = self.client.get("/api/reflections/")
+        self.assertEqual(listed.status_code, 200)
+        self.assertEqual(listed.data[0]["reason_id"], "time")
 
     def test_workout_summary(self):
         self.client.post(

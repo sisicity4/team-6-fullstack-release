@@ -18,16 +18,19 @@ class Goal(models.Model):
 
 class Reflection(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="reflections")
+    log_date = models.DateField(default=timezone.localdate, db_index=True)
     action = models.CharField(max_length=255)
     mood = models.PositiveSmallIntegerField(default=50)
     notes = models.TextField(blank=True)
     emotion_tags = models.JSONField(default=list, blank=True)
     next_step = models.CharField(max_length=255, blank=True)
     success = models.BooleanField(default=False)
+    reason_id = models.CharField(max_length=32, blank=True)
+    counter_duration_seconds = models.PositiveSmallIntegerField(null=True, blank=True)
     logged_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        ordering = ["-logged_at"]
+        ordering = ["-log_date", "-logged_at"]
 
     def __str__(self):
         return f"{self.user.username} - {self.action[:40]}"

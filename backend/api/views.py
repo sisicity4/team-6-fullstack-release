@@ -1,6 +1,8 @@
 from datetime import timedelta
 
 from django.contrib.auth.models import User
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError
 from django.db.models import Avg, Sum
 from django.utils import timezone
 from rest_framework import status
@@ -27,6 +29,13 @@ def register_view(request):
         return Response(
             {"error": "username and password required"},
             status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    try:
+        validate_password(password)
+    except ValidationError as error:
+        return Response(
+            {"password": error.messages}, status=status.HTTP_400_BAD_REQUEST
         )
 
     if User.objects.filter(username=username).exists():
@@ -91,6 +100,16 @@ def reflections_view(request):
     if request.method == "POST":
         serializer = ReflectionSerializer(data=request.data)
         if serializer.is_valid():
+            reflection = Reflection.objects.filter(
+                user=request.user,
+                log_date=serializer.validated_data["log_date"],
+            ).first()
+            if reflection:
+                serializer = ReflectionSerializer(reflection, data=request.data)
+                serializer.is_valid(raise_exception=True)
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_200_OK)
+
             serializer.save(user=request.user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

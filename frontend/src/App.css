@@ -15,6 +15,111 @@
   gap: 1.25rem;
 }
 
+.auth-screen {
+  margin-top: min(12vh, 7rem);
+}
+
+.auth-eyebrow {
+  margin: 0;
+  color: #9f92ff;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.auth-title {
+  margin: 0.25rem 0;
+  font-size: 1.65rem;
+}
+
+.auth-tabs {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.4rem;
+  margin: 1.25rem 0;
+  padding: 0.3rem;
+  border-radius: 14px;
+  background: #f2edff;
+}
+
+.auth-tab {
+  border: 0;
+  border-radius: 10px;
+  padding: 0.65rem;
+  color: #5e558c;
+  background: transparent;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.auth-tab--active {
+  color: #3f2a8a;
+  background: white;
+  box-shadow: 0 3px 10px rgba(24, 12, 71, 0.1);
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.auth-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  color: #4e4a68;
+  font-weight: 600;
+}
+
+.auth-form input {
+  width: 100%;
+  border: 1px solid rgba(15, 7, 35, 0.2);
+  border-radius: 12px;
+  padding: 0.75rem;
+  color: #140b34;
+  background: white;
+  font: inherit;
+}
+
+.auth-help,
+.auth-error {
+  margin: -0.2rem 0 0;
+  font-size: 0.85rem;
+}
+
+.auth-help {
+  color: #6e648c;
+}
+
+.auth-error,
+.sync-error {
+  color: #a32352;
+}
+
+.auth-bar {
+  display: flex;
+  width: min(540px, 100%);
+  align-items: center;
+  justify-content: space-between;
+  color: #5e558c;
+  font-size: 0.85rem;
+}
+
+.auth-bar .link-button {
+  padding: 0.25rem;
+}
+
+.sync-status,
+.sync-error {
+  width: min(540px, 100%);
+  margin: 0;
+  font-size: 0.85rem;
+  text-align: center;
+}
+
 .card {
   background: white;
   border-radius: 20px;

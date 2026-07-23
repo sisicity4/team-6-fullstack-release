@@ -1,27 +1,35 @@
-# Team-6-Django-backend-feature-auth-goal-api
+# Django API
 
-このディレクトリは Django API サービスを単独で管理するリポジトリです。React フロントエンドは別レポジトリで独立しており、`scripts/sync-react-to-django.sh` でビルド成果物を取り込んで `/app` で公開します。
+PetFitのAPIです。公開向けの全体像とデプロイ手順は、[ルートREADME](../README.md)を参照してください。
 
 ## セットアップ
-1. `cd Team-6-Django-backend-feature-auth-goal-api`
-2. `python3 -m venv venv`
-3. `source venv/bin/activate`
-4. `pip install --break-system-packages -r requirements.txt`
-5. `python manage.py migrate`
 
-## 開発サーバー
-- `python manage.py runserver 0.0.0.0:8000`
-- `http://127.0.0.1:8000/api/` で DRF エンドポイント、`/app` で React SPA を提供します。
+```sh
+cp ../.env.example .env
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+python manage.py migrate
+python manage.py runserver
+```
 
-## React ビルド資産の取り込み
-1. `scripts/sync-react-to-django.sh` を実行すると、React の `dist/` を Django のテンプレート・静的 assets にコピーし、`collectstatic` まで自動で回ります。
-2. React 側のビルドは `Team-6-React-frontend/Team-6-react-frontend` で `npm run build` を手動またはスクリプトから実行してください。
+既定ではSQLiteを使います。`DATABASE_URL` を設定すると、対応するデータベースへ接続します。
+
+## 主なエンドポイント
+
+- `GET /api/health/`: ヘルスチェック
+- `POST /api/register/`, `POST /api/login/`, `POST /api/token/refresh/`: 認証
+- `GET, POST /api/profile/`: プロフィール
+- `GET, POST /api/reflections/`: 日次ログ・振り返り（`log_date` ごとに更新）
+- `POST /api/workouts/`, `GET /api/workouts/summary/`: 運動記録と集計
+- `POST /api/body-metrics/`: 身体指標
+
+認証が必要なエンドポイントにはJWTの `Authorization: Bearer <access_token>` ヘッダーが必要です。
 
 ## テスト
-- `python manage.py test`
 
-## 重要なパス
-- `backend/static/app/assets/`：WhiteNoise で配信する React アセット
-- `backend/templates/app/index.html`：React ルートを描画するテンプレート
+```sh
+DEBUG=true SECRET_KEY=local-only-secret python manage.py test
+```
 
-このリポジトリ単体で API を開発しつつ、`scripts/sync-react-to-django.sh` を使って統合された `/app` を確認してください。
+本番では、Dockerイメージ内でReactのビルド成果物を取り込み、WhiteNoiseで同一オリジン配信します。

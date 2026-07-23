@@ -1,4 +1,4 @@
-import petSpark from '../assets/pet-spark.svg'
+import { petVariants } from '../assets/newpic/petVariants'
 import { Card } from '../components/ui/Card'
 import { StatusGauge } from '../components/ui/StatusGauge'
 import type { PetStatus } from '../types'
@@ -7,6 +7,8 @@ type Props = {
   petStatus: PetStatus
   recentEnemyReason: string | null
   todayCounterStatus: string
+  hasTodayLog: boolean
+  todaySucceeded: boolean
   onTapYes: () => void
   onTapNo: () => void
   onViewReflection: () => void
@@ -16,15 +18,25 @@ export function HomePage({
   petStatus,
   recentEnemyReason,
   todayCounterStatus,
+  hasTodayLog,
+  todaySucceeded,
   onTapYes,
   onTapNo,
   onViewReflection,
 }: Props) {
+  const pet = todaySucceeded
+    ? { image: petVariants.expression.happy, label: '喜んでいるペット' }
+    : hasTodayLog && petStatus.energy < 60
+      ? { image: petVariants.expression.sleepy, label: '眠そうなペット' }
+      : hasTodayLog
+        ? { image: petVariants.expression.encouraging, label: '応援するペット' }
+        : { image: petVariants.default, label: 'ペット' }
+
   return (
     <section className="screen home-screen">
       <Card className="home-hero">
         <div className="home-hero__badge">
-          <img src={petSpark} alt="ペット" />
+          <img src={pet.image} alt={pet.label} />
         </div>
         <div className="home-hero__text">
           <p className="home-hero__eyebrow">ペットの部屋</p>

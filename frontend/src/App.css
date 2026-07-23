@@ -145,7 +145,11 @@
 }
 
 .home-hero__badge img {
-  width: 50px;
+  width: 62px;
+  height: 62px;
+  object-fit: cover;
+  object-position: center 44%;
+  border-radius: 50%;
 }
 
 .home-hero__text h2 {

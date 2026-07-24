@@ -7,6 +7,7 @@ type Props = {
   petStatus: PetStatus
   totalLogCount: number
   recentSuccessCount: number
+  recordingStreak: number
   onStartRecord: () => void
 }
 
@@ -20,7 +21,13 @@ const getGrowth = (totalLogCount: number) => {
   return { image: petVariants.growth.adult, label: '成体', message: '習慣を積み重ねた、頼れるパートナー。' }
 }
 
-export function CarePage({ petStatus, totalLogCount, recentSuccessCount, onStartRecord }: Props) {
+export function CarePage({
+  petStatus,
+  totalLogCount,
+  recentSuccessCount,
+  recordingStreak,
+  onStartRecord,
+}: Props) {
   const growth = getGrowth(totalLogCount)
   const image = recentSuccessCount >= 3 ? petVariants.texture.stardustGlow : growth.image
   const imageLabel = recentSuccessCount >= 3 ? '星屑が輝くペット' : `${growth.label}のペット`
@@ -44,10 +51,14 @@ export function CarePage({ petStatus, totalLogCount, recentSuccessCount, onStart
       </div>
 
       <Card className="care-next-action">
-        <p className="page-title">今日のお世話</p>
+        <p className="page-title">明日の自分に、20秒の余白を残そう</p>
         <p className="page-subtitle">できなかった日も、理由を記録すればペットと次の一歩を考えられます。</p>
+        <div className="care-streak" aria-label={`現在 ${recordingStreak}日連続で記録中`}>
+          <span className="care-streak__count">{recordingStreak}</span>
+          <span>日連続でペットに会えた</span>
+        </div>
         <button type="button" className="primary-button" onClick={onStartRecord}>
-          今日の記録をつける
+          今日の20秒を選ぶ
         </button>
       </Card>
     </section>

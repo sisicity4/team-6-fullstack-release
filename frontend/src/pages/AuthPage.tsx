@@ -20,9 +20,9 @@ export function AuthPage({ isSubmitting, error, onSubmit }: Props) {
   return (
     <section className="screen auth-screen">
       <Card>
-        <p className="auth-eyebrow">PetFit</p>
-        <h1 className="auth-title">記録をあなたのアカウントへ</h1>
-        <p className="page-subtitle">ログインすると、日次ログを保存して別の端末でも振り返れます。</p>
+        <p className="auth-eyebrow">PetFit / 忙しい日の運動リカバリー</p>
+        <h1 className="auth-title">できなかった日を、0点で終わらせない。</h1>
+        <p className="page-subtitle">理由を選んで20秒だけ反撃。ペットと一緒に、明日の自分を助けよう。</p>
         <div className="auth-tabs" role="tablist" aria-label="認証方法">
           <button
             type="button"

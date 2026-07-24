@@ -18,6 +18,12 @@ from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+LOCAL_FRONTEND_DIST_DIR = BASE_DIR.parent / "frontend" / "dist"
+FRONTEND_BUILD_DIRS = [
+    directory
+    for directory in (BASE_DIR / "frontend_dist", LOCAL_FRONTEND_DIST_DIR)
+    if directory.exists()
+]
 load_dotenv(BASE_DIR / ".env")
 
 
@@ -69,7 +75,7 @@ ROOT_URLCONF = 'config.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'templates'],
+        'DIRS': [BASE_DIR / 'templates', *FRONTEND_BUILD_DIRS],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -81,7 +87,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'backend.wsgi.application'
+WSGI_APPLICATION = 'config.wsgi.application'
 
 
 # Database
@@ -118,7 +124,7 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/6.0/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'ja'
 
 TIME_ZONE = 'UTC'
 
@@ -132,6 +138,14 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
+    'DEFAULT_THROTTLE_CLASSES': (
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle',
+    ),
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '20/hour',
+        'user': '120/hour',
+    },
 }
 
 # Static files (CSS, JavaScript, Images)
@@ -139,7 +153,7 @@ REST_FRAMEWORK = {
 
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
-STATICFILES_DIRS = [BASE_DIR / 'frontend_dist'] if (BASE_DIR / 'frontend_dist').exists() else []
+STATICFILES_DIRS = FRONTEND_BUILD_DIRS
 STORAGES = {
     'staticfiles': {
         'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage',

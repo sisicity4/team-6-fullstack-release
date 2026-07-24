@@ -3,6 +3,7 @@ import { BottomNav } from '../components/BottomNav'
 import { HeaderCard } from '../components/HeaderCard'
 import { ReasonCard } from '../components/ReasonCard'
 import { WeeklyRecordCard } from '../components/WeeklyRecordCard'
+import type { BottomNavItem } from '../types'
 
 const weeklyRecords = [
   { label: '月', success: true },
@@ -19,12 +20,11 @@ const reasons = [
   { title: '体調を優先', detail: '睡眠不足なので無理をせず休息をとった' },
 ]
 
-const navItems = [
-  { label: 'ホーム' },
-  { label: '運動' },
-  { label: 'ショップ' },
-  { label: 'お世話' },
-  { label: '統計', active: true },
+const navItems: BottomNavItem[] = [
+  { key: 'home', label: 'ホーム', icon: '⌂' },
+  { key: 'reasonInput', label: '記録', icon: '✎' },
+  { key: 'takecare', label: 'お世話', icon: '♡' },
+  { key: 'reflection', label: '振り返り', icon: '◫' },
 ]
 
 export function StatisticsPage() {
@@ -37,7 +37,7 @@ export function StatisticsPage() {
       <AchievementCard rate={14} successDays={5} totalDays={30} />
       <WeeklyRecordCard records={weeklyRecords} streak={5} />
       <ReasonCard reasons={reasons} />
-      <BottomNav items={navItems} />
+      <BottomNav items={navItems} activeKey="reflection" onNavigate={() => undefined} />
     </main>
   )
 }

@@ -3,8 +3,6 @@ export type Screen =
   | 'reasonInput'
   | 'counterAction'
   | 'reflection'
-  | 'exercise'
-  | 'shop'
   | 'takecare'
 
 export type DailyLog = {
@@ -42,5 +40,6 @@ export type WeeklyReasonSummary = {
 export type BottomNavItem = {
   key: Screen
   label: string
+  icon: string
   note?: string
 }

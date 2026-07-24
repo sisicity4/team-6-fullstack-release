@@ -1,35 +1,36 @@
-## セットアップ手順
+# React UI
 
-1. このディレクトリへ移動
-   `cd Team-6-react-frontend/Team-6-react-frontend`
-2. 依存関係をインストール
-   `npm install`
+PetFitの画面UIです。プロダクトの概要と統合デプロイの手順は、[ルートREADME](../README.md)を参照してください。
 
-## 開発サーバー
+## セットアップ
 
-- `npm run dev` — Viteの開発サーバーを起動し、`http://localhost:5173`（またはログに表示されたURL）をブラウザで開いて動作確認します。
+```sh
+npm ci
+npm run dev
+```
 
-## その他のスクリプト
+通常は <http://localhost:5173> で確認できます。
 
-- `npm run build` — 本番ビルドを生成
-- `npm run preview` — ビルド成果物をローカル静的サーバーで確認
-- `npm run lint` — ESLintでコード品質をチェック
+## コマンド
 
-※ 上記のコマンドはすべて `Team-6-react-frontend/Team-6-react-frontend` の中で実行してください。
+```sh
+npm run lint     # ESLint
+npm run build    # 本番用ビルド
+npm run preview  # ビルド結果の確認
+```
 
-## フォルダーファイル構成と役割
+## 現在の実装範囲
 
-- `src/pages/` — 各画面（Home/Reason Input/Battle/Reflectionなど）のコンポーネント
-- `src/components/` — BottomNavや共通のCard、StatusGaugeなどの汎用UI
-- `src/components/ui/` — 再利用性の高いUI部品（カード枠・ゲージなど）
-- `src/data/` — 理由リストやナビゲーションデータのモック定義
-- `src/api/` — 将来的なDjango API呼び出しラッパー
-- `src/assets/` — SVGや画像
-- `src/types.ts` — Screen／Reason／PetStatusなどの型定義
+- ホーム、理由選択、短時間の反撃、振り返り画面を実装しています。
+- 登録・ログイン後、日次ログはDjango APIを通じてユーザーごとに保存します。
+- JWTのアクセストークンとリフレッシュトークンを使い、アクセストークンの期限切れ時は自動更新します。
+- `POST /api/reflections/` は同日分を更新するため、今日の回答をやり直しても記録が重複しません。
+- 下部ナビの「運動」「ショップ」「お世話」はプレースホルダーです。
 
-## 開発時のポイント
+## 構成
 
-1. `npm run dev` でサーバーを立ち上げ、画面下部の `現在 screen: ...` インジケーターを見ながら操作すれば、どの画面に遷移したかが視覚的に追えます。
-2. `src/App.tsx` の `screen` による制御（`HomePage` → `ReasonInputPage` → `CounterActionPage` → `ReflectionPage`）を活用し、必要に応じて新しいscreenを追加。
-3. Django APIとの連携は `src/api/` にfetchヘルパーを作って置き、`src/data/` のモックを差し替えていく形で進めます。
-4. 認証トークンや履歴はlocalStorageまたはcontextを使って保持する設計です。
+- `src/pages/`: 画面コンポーネント
+- `src/components/`: 再利用するUI部品
+- `src/data/`: 理由・ナビゲーションなどの静的データ
+- `src/types.ts`: UIで使う型定義
+- `src/api/`: 将来のAPI連携の置き場

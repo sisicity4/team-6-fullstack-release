@@ -1,41 +1,116 @@
 import { useEffect, useMemo, useState } from 'react'
 import './App.css'
+import {
+  ApiError,
+  apiRequest,
+  clearAuthSession,
+  loadAuthSession,
+  login,
+  refreshAccessToken,
+  registerAccount,
+  saveAuthSession,
+  type AuthSession,
+  type ReflectionResponse,
+} from './api/client'
 import { BottomNav } from './components/BottomNav'
 import { Card } from './components/ui/Card'
-import { reasonOptions, bottomNavItems } from './data/appData'
+import { bottomNavItems, reasonOptions } from './data/appData'
+import { AuthPage } from './pages/AuthPage'
 import { CounterActionPage } from './pages/CounterActionPage'
+import { CarePage } from './pages/CarePage'
 import { HomePage } from './pages/HomePage'
 import { ReasonInputPage } from './pages/ReasonInputPage'
 import { ReflectionPage } from './pages/ReflectionPage'
 import type { DailyLog, Screen, WeeklyReasonSummary } from './types'
 
-const STORAGE_KEY = 'petfit-daily-logs'
-const getTodayKey = () => new Date().toISOString().slice(0, 10)
+const getTodayKey = () =>
+  new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Tokyo' }).format(new Date())
 const clamp = (value: number) => Math.max(0, Math.min(100, value))
 const getRecentLogs = (logs: DailyLog[], limit: number) =>
   [...logs].sort((a, b) => a.date.localeCompare(b.date)).slice(-limit)
+const shiftDateKey = (dateKey: string, offsetDays: number) => {
+  const date = new Date(`${dateKey}T00:00:00Z`)
+  date.setUTCDate(date.getUTCDate() + offsetDays)
+  return date.toISOString().slice(0, 10)
+}
+const getRecordingStreak = (logs: DailyLog[], todayKey: string) => {
+  const loggedDates = new Set(logs.map((log) => log.date))
+  let cursor = loggedDates.has(todayKey) ? todayKey : shiftDateKey(todayKey, -1)
+  let streak = 0
 
-const loadDailyLogs = (): DailyLog[] => {
-  if (typeof window === 'undefined') return []
+  while (loggedDates.has(cursor)) {
+    streak += 1
+    cursor = shiftDateKey(cursor, -1)
+  }
+
+  return streak
+}
+
+const toDailyLog = (reflection: ReflectionResponse): DailyLog => ({
+  date: reflection.log_date,
+  succeeded: reflection.success,
+  reasonId: reflection.reason_id || undefined,
+  counterDurationSeconds: reflection.counter_duration_seconds ?? undefined,
+  note: reflection.notes || undefined,
+})
+
+const getErrorMessage = (error: unknown) =>
+  error instanceof Error ? error.message : '通信に失敗しました。時間をおいて再試行してください。'
+
+async function authenticatedRequest<T>(
+  session: AuthSession,
+  path: string,
+  options: RequestInit,
+  onSessionRefresh: (_session: AuthSession) => void,
+): Promise<T> {
   try {
-    const stored = window.localStorage.getItem(STORAGE_KEY)
-    return stored ? (JSON.parse(stored) as DailyLog[]) : []
+    return await apiRequest<T>(path, { ...options, token: session.access })
   } catch (error) {
-    console.error(error)
-    return []
+    if (!(error instanceof ApiError) || error.status !== 401) throw error
+
+    const { access } = await refreshAccessToken(session.refresh)
+    const refreshedSession = { ...session, access }
+    saveAuthSession(refreshedSession)
+    onSessionRefresh(refreshedSession)
+    return apiRequest<T>(path, { ...options, token: access })
   }
 }
 
 export function App() {
-  const [dailyLogs, setDailyLogs] = useState<DailyLog[]>(() => loadDailyLogs())
+  const [session, setSession] = useState<AuthSession | null>(() => loadAuthSession())
+  const [dailyLogs, setDailyLogs] = useState<DailyLog[]>([])
   const [screen, setScreen] = useState<Screen>('home')
   const [selectedReasonId, setSelectedReasonId] = useState<string | null>(null)
   const [reasonMemo, setReasonMemo] = useState('')
+  const [isAuthenticating, setIsAuthenticating] = useState(false)
+  const [isLoadingLogs, setIsLoadingLogs] = useState(false)
+  const [isSavingLog, setIsSavingLog] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (typeof window === 'undefined') return
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(dailyLogs))
-  }, [dailyLogs])
+    if (!session) {
+      setDailyLogs([])
+      return
+    }
+
+    let cancelled = false
+    setIsLoadingLogs(true)
+    setError(null)
+    void authenticatedRequest<ReflectionResponse[]>(session, 'reflections/', {}, setSession)
+      .then((reflections) => {
+        if (!cancelled) setDailyLogs(reflections.map(toDailyLog))
+      })
+      .catch((requestError) => {
+        if (!cancelled) setError(getErrorMessage(requestError))
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoadingLogs(false)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [session])
 
   const todayKey = getTodayKey()
   const todaysLog = dailyLogs.find((entry) => entry.date === todayKey)
@@ -47,7 +122,7 @@ export function App() {
       const occurrences7 = recentSevenLogs.filter((log) => log.reasonId === reason.id).length
       const occurrences30 = recentThirtyLogs.filter((log) => log.reasonId === reason.id).length
       const lastLog = [...dailyLogs]
-        .reverse()
+        .sort((a, b) => b.date.localeCompare(a.date))
         .find((log) => log.reasonId === reason.id)
       return {
         id: reason.id,
@@ -72,8 +147,7 @@ export function App() {
     })
     const winner = Object.entries(countMap).sort((a, b) => b[1] - a[1])[0]
     if (!winner) return null
-    const option = reasonOptions.find((reason) => reason.id === winner[0])
-    return option ? option.label : null
+    return reasonOptions.find((reason) => reason.id === winner[0])?.label ?? null
   }, [recentSevenLogs])
 
   const petStatus = useMemo(() => {
@@ -88,32 +162,93 @@ export function App() {
 
   const todayCounterStatus = useMemo(() => {
     if (!todaysLog) return 'まだ記録なし'
-    if (todaysLog.succeeded) return '反撃済み → 自動的に更新'
-    if ((todaysLog.counterDurationSeconds ?? 0) > 0) return '反撃完了'
-    return 'パス済み'
+    if (todaysLog.succeeded) return '反撃済み → 同期済み'
+    if ((todaysLog.counterDurationSeconds ?? 0) > 0) return '反撃完了 → 同期済み'
+    return 'パス済み → 同期済み'
   }, [todaysLog])
 
   const lastCounterLog = useMemo(() => {
-    const log = [...dailyLogs]
-      .sort((a, b) => b.date.localeCompare(a.date))
-      .find((entry) => entry.reasonId)
-    if (!log || !log.reasonId) return null
+    const log = [...dailyLogs].sort((a, b) => b.date.localeCompare(a.date)).find((entry) => entry.reasonId)
+    if (!log?.reasonId) return null
     const reason = reasonOptions.find((option) => option.id === log.reasonId)
     if (!reason) return null
-    return {
-      label: reason.label,
-      duration: log.counterDurationSeconds ?? 0,
-      note: log.note,
-    }
+    return { label: reason.label, duration: log.counterDurationSeconds ?? 0, note: log.note }
   }, [dailyLogs])
 
-  const upsertTodayLog = (log: DailyLog) => {
-    setDailyLogs((prev) => [...prev.filter((entry) => entry.date !== log.date), log])
+  const recentSuccessCount = recentSevenLogs.filter((log) => log.succeeded).length
+  const recordingStreak = useMemo(
+    () => getRecordingStreak(dailyLogs, todayKey),
+    [dailyLogs, todayKey],
+  )
+
+  const persistDailyLog = async (log: DailyLog) => {
+    if (!session || isSavingLog) return
+    const reason = reasonOptions.find((option) => option.id === log.reasonId)
+    setIsSavingLog(true)
+    setError(null)
+
+    try {
+      const reflection = await authenticatedRequest<ReflectionResponse>(
+        session,
+        'reflections/',
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            log_date: log.date,
+            action: log.succeeded ? '運動を実行' : reason?.counterAdvice ?? '反撃を記録',
+            mood: log.succeeded ? 75 : 50,
+            notes: log.note ?? '',
+            emotion_tags: log.reasonId ? [log.reasonId] : [],
+            next_step: reason?.counterAdvice ?? '',
+            success: log.succeeded,
+            reason_id: log.reasonId ?? '',
+            counter_duration_seconds: log.counterDurationSeconds ?? null,
+          }),
+        },
+        setSession,
+      )
+      const syncedLog = toDailyLog(reflection)
+      setDailyLogs((previous) => [
+        ...previous.filter((entry) => entry.date !== syncedLog.date),
+        syncedLog,
+      ])
+      setSelectedReasonId(null)
+      setReasonMemo('')
+      setScreen('reflection')
+    } catch (requestError) {
+      setError(getErrorMessage(requestError))
+    } finally {
+      setIsSavingLog(false)
+    }
+  }
+
+  const handleAuth = async (mode: 'login' | 'register', username: string, password: string) => {
+    setIsAuthenticating(true)
+    setError(null)
+    try {
+      if (mode === 'register') await registerAccount(username, password)
+      const tokens = await login(username, password)
+      const nextSession = { username, ...tokens }
+      saveAuthSession(nextSession)
+      setSession(nextSession)
+    } catch (requestError) {
+      setError(getErrorMessage(requestError))
+    } finally {
+      setIsAuthenticating(false)
+    }
+  }
+
+  const handleLogout = () => {
+    clearAuthSession()
+    setSession(null)
+    setScreen('home')
+    setSelectedReasonId(null)
+    setReasonMemo('')
+    setError(null)
   }
 
   const handleYesTap = () => {
-    upsertTodayLog({ date: todayKey, succeeded: true })
-    setScreen('reflection')
+    void persistDailyLog({ date: todayKey, succeeded: true })
   }
 
   const handleNoTap = () => {
@@ -121,47 +256,44 @@ export function App() {
   }
 
   const handleReasonSubmit = () => {
-    if (!selectedReasonId) return
-    setScreen('counterAction')
+    if (selectedReasonId) setScreen('counterAction')
   }
 
   const handleCounterComplete = (seconds: number) => {
-    if (!selectedReasonId) {
-      setScreen('home')
-      return
-    }
-    upsertTodayLog({
+    if (!selectedReasonId) return
+    void persistDailyLog({
       date: todayKey,
       succeeded: false,
       reasonId: selectedReasonId,
       counterDurationSeconds: seconds,
       note: reasonMemo || undefined,
     })
-    setSelectedReasonId(null)
-    setReasonMemo('')
-    setScreen('reflection')
   }
 
   const handleCounterSkip = () => {
-    if (!selectedReasonId) {
-      setScreen('home')
-      return
-    }
-    upsertTodayLog({
+    if (!selectedReasonId) return
+    void persistDailyLog({
       date: todayKey,
       succeeded: false,
       reasonId: selectedReasonId,
       counterDurationSeconds: 0,
       note: reasonMemo || undefined,
     })
-    setSelectedReasonId(null)
-    setReasonMemo('')
-    setScreen('reflection')
   }
 
-  const navActiveKey: Screen =
-    screen === 'reasonInput' || screen === 'counterAction' ? 'home' : screen
+  if (!session) {
+    return (
+      <main className="app-shell">
+        <AuthPage
+          isSubmitting={isAuthenticating}
+          error={error}
+          onSubmit={(mode, username, password) => void handleAuth(mode, username, password)}
+        />
+      </main>
+    )
+  }
 
+  const navActiveKey: Screen = screen === 'counterAction' ? 'reasonInput' : screen
   const currentReasonOption = reasonOptions.find((reason) => reason.id === selectedReasonId)
 
   const renderScreen = () => {
@@ -171,6 +303,9 @@ export function App() {
           petStatus={petStatus}
           recentEnemyReason={recentEnemyReason}
           todayCounterStatus={todayCounterStatus}
+          hasTodayLog={Boolean(todaysLog)}
+          todaySucceeded={todaysLog?.succeeded ?? false}
+          recordingStreak={recordingStreak}
           onTapYes={handleYesTap}
           onTapNo={handleNoTap}
           onViewReflection={() => setScreen('reflection')}
@@ -192,16 +327,11 @@ export function App() {
     }
     if (screen === 'counterAction') {
       if (!currentReasonOption) {
-        return (
-          <section className="screen">
-            <Card>
-              <p>理由を選んでから反撃してください。</p>
-            </Card>
-          </section>
-        )
+        return <section className="screen"><Card><p>理由を選んでから反撃してください。</p></Card></section>
       }
       return (
         <CounterActionPage
+          key={currentReasonOption.id}
           reason={currentReasonOption}
           reasonMemo={reasonMemo}
           onCounterComplete={handleCounterComplete}
@@ -220,25 +350,42 @@ export function App() {
         />
       )
     }
-    return (
-      <section className="screen placeholder-screen">
-        <Card>
-          <p>COMING SOON: {screen}</p>
-        </Card>
-      </section>
-    )
+    if (screen === 'takecare') {
+      return (
+        <CarePage
+          petStatus={petStatus}
+          totalLogCount={dailyLogs.length}
+          recentSuccessCount={recentSuccessCount}
+          recordingStreak={recordingStreak}
+          onStartRecord={() => setScreen('reasonInput')}
+        />
+      )
+    }
+    return null
   }
 
   return (
-    <div className="app-shell">
+    <main className="app-shell">
+      <header className="auth-bar">
+        <span>{session.username} としてログイン中</span>
+        <button type="button" className="link-button" onClick={handleLogout}>ログアウト</button>
+      </header>
+      {isLoadingLogs && <p className="sync-status">記録を読み込んでいます…</p>}
+      {isSavingLog && <p className="sync-status">記録を保存しています…</p>}
+      {error && <p className="sync-error" role="alert">{error}</p>}
       {renderScreen()}
-      <div className="screen-indicator">現在 screen: {screen}</div>
       <BottomNav
         items={bottomNavItems}
         activeKey={navActiveKey}
-        onNavigate={setScreen}
+        onNavigate={(nextScreen) => {
+          if (nextScreen === 'reasonInput') {
+            setSelectedReasonId(null)
+            setReasonMemo('')
+          }
+          setScreen(nextScreen)
+        }}
       />
-    </div>
+    </main>
   )
 }
 

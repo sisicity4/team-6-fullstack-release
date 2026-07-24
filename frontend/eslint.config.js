@@ -28,4 +28,10 @@ export default defineConfig([
       'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]', argsIgnorePattern: '^_' }],
     },
   },
+  {
+    files: ['**/*.{ts,tsx}'],
+    rules: {
+      'no-undef': 'off',
+    },
+  },
 ])

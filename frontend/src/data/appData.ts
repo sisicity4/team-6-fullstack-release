@@ -40,9 +40,8 @@ export const reasonOptions: ReasonOption[] = [
 ]
 
 export const bottomNavItems: BottomNavItem[] = [
-  { key: 'home', label: 'ホーム' },
-  { key: 'exercise', label: '運動' },
-  { key: 'shop', label: 'ショップ' },
-  { key: 'takecare', label: 'お世話' },
-  { key: 'reflection', label: '統計' },
+  { key: 'home', label: 'ホーム', icon: '⌂' },
+  { key: 'reasonInput', label: '記録', icon: '✎' },
+  { key: 'takecare', label: 'お世話', icon: '♡' },
+  { key: 'reflection', label: '振り返り', icon: '◫' },
 ]

@@ -8,15 +8,26 @@ class ReflectionSerializer(serializers.ModelSerializer):
         model = Reflection
         fields = [
             "id",
+            "log_date",
             "action",
             "mood",
             "notes",
             "emotion_tags",
             "next_step",
             "success",
+            "reason_id",
+            "counter_duration_seconds",
             "logged_at",
         ]
         read_only_fields = ["id", "logged_at"]
+        extra_kwargs = {
+            "log_date": {"required": True},
+        }
+
+    def validate_counter_duration_seconds(self, value):
+        if value is not None and not 0 <= value <= 3600:
+            raise serializers.ValidationError("must be between 0 and 3600")
+        return value
 
 
 class GoalSerializer(serializers.ModelSerializer):

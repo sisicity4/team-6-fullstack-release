@@ -28,6 +28,23 @@ const getTodayKey = () =>
 const clamp = (value: number) => Math.max(0, Math.min(100, value))
 const getRecentLogs = (logs: DailyLog[], limit: number) =>
   [...logs].sort((a, b) => a.date.localeCompare(b.date)).slice(-limit)
+const shiftDateKey = (dateKey: string, offsetDays: number) => {
+  const date = new Date(`${dateKey}T00:00:00Z`)
+  date.setUTCDate(date.getUTCDate() + offsetDays)
+  return date.toISOString().slice(0, 10)
+}
+const getRecordingStreak = (logs: DailyLog[], todayKey: string) => {
+  const loggedDates = new Set(logs.map((log) => log.date))
+  let cursor = loggedDates.has(todayKey) ? todayKey : shiftDateKey(todayKey, -1)
+  let streak = 0
+
+  while (loggedDates.has(cursor)) {
+    streak += 1
+    cursor = shiftDateKey(cursor, -1)
+  }
+
+  return streak
+}
 
 const toDailyLog = (reflection: ReflectionResponse): DailyLog => ({
   date: reflection.log_date,
@@ -159,6 +176,10 @@ export function App() {
   }, [dailyLogs])
 
   const recentSuccessCount = recentSevenLogs.filter((log) => log.succeeded).length
+  const recordingStreak = useMemo(
+    () => getRecordingStreak(dailyLogs, todayKey),
+    [dailyLogs, todayKey],
+  )
 
   const persistDailyLog = async (log: DailyLog) => {
     if (!session || isSavingLog) return
@@ -284,6 +305,7 @@ export function App() {
           todayCounterStatus={todayCounterStatus}
           hasTodayLog={Boolean(todaysLog)}
           todaySucceeded={todaysLog?.succeeded ?? false}
+          recordingStreak={recordingStreak}
           onTapYes={handleYesTap}
           onTapNo={handleNoTap}
           onViewReflection={() => setScreen('reflection')}
@@ -309,6 +331,7 @@ export function App() {
       }
       return (
         <CounterActionPage
+          key={currentReasonOption.id}
           reason={currentReasonOption}
           reasonMemo={reasonMemo}
           onCounterComplete={handleCounterComplete}
@@ -333,6 +356,7 @@ export function App() {
           petStatus={petStatus}
           totalLogCount={dailyLogs.length}
           recentSuccessCount={recentSuccessCount}
+          recordingStreak={recordingStreak}
           onStartRecord={() => setScreen('reasonInput')}
         />
       )

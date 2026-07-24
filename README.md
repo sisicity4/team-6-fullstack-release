@@ -4,6 +4,8 @@
 
 このリポジトリは、React のUIとDjango REST APIを1つのHTTPSサービスとして公開するための統合・リリース構成です。
 
+公開中: [PetFitを開く](https://team-6-fullstack-release.onrender.com/)
+
 ## 主な体験
 
 1. ホームで「今日は、どちらの一歩にする？」に答える
